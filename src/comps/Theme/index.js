@@ -1,4 +1,4 @@
-import { extendTheme } from '@chakra-ui/react';
+import { extendTheme, theme as base } from '@chakra-ui/react';
 import { mode } from '@chakra-ui/theme-tools';
 
 import Button from './Button';
@@ -28,9 +28,11 @@ const config = {
 };
 
 const theme = extendTheme({
-	fonts,
+	fonts: {
+		heading: `Inter, ${base.fonts?.heading}`,
+		body: `Inter, ${base.fonts?.body}`,
+	  },
 	breakpoints,
-	colors,
 	space,
 	config,
 	styles: {
@@ -53,6 +55,7 @@ const theme = extendTheme({
 			},
 			body: {
 				fontFamily: 'body',
+				fontSize: '0.875rem',
 				color: mode('gray.800', 'whiteAlpha.900')(props),
 				bg: mode('white', 'gray.800')(props),
 				lineHeight: 'base',
@@ -61,6 +64,19 @@ const theme = extendTheme({
 	},
 	components: {
 		Button,
+		Th: {
+			baseStyle: { 
+				textTransform: 'none',
+				color: '#667085',
+				backgroundColor: 'gray.50'
+			}
+		},
+		FormLabel: {
+			baseStyle: { 
+				fontSize: '0.75rem',
+				color: 'gray.700'
+			}
+		},	
 	},
 });
 

@@ -4,6 +4,7 @@
 		"paths": {
 			"_comps/*": ["src/comps/*"],
 			"_supabase": ["src/supabase/init.js"],
+			"_lib/*": ["src/lib/*"],
 		}
 	}
 }

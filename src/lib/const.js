@@ -1,7 +1,7 @@
 export const registrationColumns = [
     {
         header: 'Index',
-        keyname: 'id'
+        keyname: 'id',
     },
     {
         header: 'Travel code',
@@ -47,6 +47,10 @@ export const registrationColumns = [
 
 export const ticketTypeOptions = [
     {
+        label: 'Ticket',
+        value: ''
+    },
+    {
         label: 'Initialized',
         value: 'initialized'
     },
@@ -65,5 +69,35 @@ export const ticketTypeOptions = [
     {
         label: 'Declined',
         value: 'declined'
+    },
+]
+
+export const statusOptions = [
+    {
+        label: 'Status',
+        value: ''
+    },
+    {
+        label: 'FIX',
+        value: 'FIX'
+    },
+    {
+        label: 'FLEX',
+        value: 'FLEX'
+    },
+]
+
+export const specialTypeOptions = [
+    {
+        label: 'Type',
+        value: ''
+    },
+    {
+        label: 'Standard',
+        value: 'stdn'
+    },
+    {
+        label: 'Accessibility',
+        value: 'acc'
     },
 ]

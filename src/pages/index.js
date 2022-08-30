@@ -1,22 +1,64 @@
-import { Text, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Checkbox, Input, Select, HStack, Button, useDisclosure, Box, ButtonGroup, Badge, Image} from '@chakra-ui/react';
+import { Text, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Checkbox, Input, Collapse, Spinner, Center, HStack, Button, useDisclosure, Box, ButtonGroup, Badge, Image} from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { debounce, filter as _filter, trim } from 'lodash';
 
-import { registrationColumns as columns } from '_lib/const';
+import { registrationColumns as columns, ticketTypeOptions, statusOptions, specialTypeOptions } from '_lib/const';
 import Col from '_comps/Layout/Col';
 import Container from '_comps/Layout/Container';
+import MotionBox from '_comps/MotionBox';
 import ConfirmDialog from '_comps/AlertDialog/ConfirmDialog';
-
+import SelectField from '_comps/SelectField';
 import supabase  from '_supabase';
 import dayjs from 'dayjs';
 
-export default function Dashboard({ data, count, page, pagesTotal}) {
+export default function Dashboard() {
 	const router = useRouter();
 	const [ selectedRows, setSelectedRows ] = useState([]);
+	const [ filters, setFilters ] = useState({});
+	const [ pageIndex, setPageIndex ] = useState(1);
+	const [ pagesTotal, setPageTotal ] = useState(0);
+	const [ isLoading, setLoading ] = useState(true);
+	const [ data, setData ] = useState();
+	const [ isFiltersOpen, setFiltersOpen ] = useState(true);
 	const { isOpen, onOpen, onClose } = useDisclosure();
+
+	const getRegistrations = async () => {
+
+		const size = 3;
+		const from =  (pageIndex - 1) * size;
+		const to = from + size - 1;
+
+		try {
+			setLoading(true)
+			let { data, count, error } = await supabase
+			.from("registrations")
+			.select("*", { count: "exact" })
+			.order("id", { ascending: true })
+			.match(filters)
+			.range(from, to);
+
+			if (error) {
+				throw error;
+			}
+
+			if (data) {
+				setData(data);
+				setPageTotal(Math.ceil(count / size))
+			}
+		} catch (error) {
+			alert(error.message);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(()=> { getRegistrations() }, [pageIndex, filters]);
+
 
 	// Batch delete
 
+	// TODO: Set the select state on data 
 	const handleSelectedRow = (e) => {
 		const { value, checked } = e.target;
 		if (checked) {
@@ -34,6 +76,7 @@ export default function Dashboard({ data, count, page, pagesTotal}) {
 		onOpen();
 	}
 
+	// TODO: On delete confirmation delete the selected items from data instead of a hard reload
 	const onConfirmDelete = async (e) => {
 		onClose();
 		await deleteRows();
@@ -52,9 +95,39 @@ export default function Dashboard({ data, count, page, pagesTotal}) {
 	}
 
 	// Filters
+	
+	const setFilterUI = (column) => {
+		switch(column.keyname) {
+			case 'ticket_type': 
+				return <SelectField name={column.keyname} options={ticketTypeOptions}  onChange={handleFiltering} data-key={column.keyname} width="100px"  bg="white"/>
+			case 'status':
+				return <SelectField name={column.keyname} options={statusOptions}  onChange={handleFiltering} data-key={column.keyname} width="100px"  bg="white"/>
+			case 'special_type':
+				return <SelectField name={column.keyname} options={specialTypeOptions}  onChange={handleFiltering} data-key={column.keyname} width="100px"  bg="white"/>
+			case 'id':
+				return <Input type="number" onChange={handleFiltering} data-key={column.keyname} bg="white" />
+			default:
+				return <Input onChange={handleFiltering} data-key={column.keyname}  bg="white" />
+		}
+	}
 
 	const toggleFilters = (e) => {
+		setFiltersOpen(!isFiltersOpen);
+	}
 
+	const setFilter = (keyname, value) => {
+		const newValue = trim(value);
+		if (newValue.length > 0) {
+			setFilters({...filters, [keyname]: newValue});
+		} else {
+			setFilters(_filter(filters, value => value != newValue))
+		}
+	}
+
+	const debounceFiltering = useCallback(debounce(setFilter, 500), []);
+
+	const handleFiltering = (e) => {
+		debounceFiltering(e.target.dataset.key, e.target.value);
 	}
 
 	// Format Cell
@@ -90,6 +163,10 @@ export default function Dashboard({ data, count, page, pagesTotal}) {
 		backgroundColor: 'gray.50'
 	}
 
+	const closeIconVariants = {
+		open: {rotate: '45deg'},
+		close: {rotate: 0}
+	}
 
 	return (
 		<Box pt={6}>
@@ -101,7 +178,12 @@ export default function Dashboard({ data, count, page, pagesTotal}) {
 						{ selectedRows.length > 0 && <Button onClick={handleDeleteRows}>Delete</Button> }
 					</ButtonGroup>
 					<ButtonGroup>
-						<Button variant="ternary" onClick={toggleFilters}>Filters</Button>
+						<Button variant="ternary" onClick={toggleFilters}>
+							<MotionBox transition="0.5s ease-in-out" animate={isFiltersOpen? "close" : "open"} variants={closeIconVariants}>
+								<Image src="close-icon.svg" alt="Close" width="10px" />
+							</MotionBox>
+							<Text ml={2}>Filters</Text>
+						</Button>
 					</ButtonGroup>
 				</HStack>
 			</Col>
@@ -116,28 +198,17 @@ export default function Dashboard({ data, count, page, pagesTotal}) {
 						</Thead>
 						<Tbody>
 							<Tr bg="gray.50">
-								<Td colSpan={2}><Input /></Td>
-								<Td><Input /></Td>
-								<Td><Input /></Td>
-								<Td><Input /></Td>
-								<Td><Input /></Td>
-								<Td><Select size="md" id="status" name="status" placeholder='Status' width="100px">
-                                    <option key="status1" value='Initialized'>Initialized</option>
-                                    <option key="status2" value='Created'>Created</option>
-                                    <option key="status3" value='Verified'>Verified</option>
-                                    <option key="status4" value='Completed'>Completed</option>
-                                    <option key="status5" value='Declined'>Declined</option>
-                                </Select></Td>
-								<Td><Input /></Td>
-								<Td><Select id="ticket_type" name="ticket_type" placeholder='Ticket' width="100px">
-                                    <option key="status1" value='FIX'>FIX</option>
-                                    <option key="status2" value='FLEX'>FLEX</option>
-                                </Select></Td>
-								<Td><Input /></Td>
-								<Td><Input /></Td>
-								<Td><Input /></Td>
+							<Td colSpan={columns.length + 1} p={0}>
+							<Collapse in={isFiltersOpen} animateOpacity>						
+								<Table><Tbody><Tr>
+								{columns.map((column, i) => (i==0)? <Td colSpan={2} key={column.keyname}>{setFilterUI(column)}</Td> : <Td key={column.keyname}>{setFilterUI(column)}</Td>)}
+								</Tr></Tbody></Table>
+							</Collapse>	
+							</Td>
 							</Tr>
-							{data.map((row) => {
+							{isLoading && <Tr><Td colSpan={columns.length + 1}><Center><Spinner /></Center></Td></Tr>}
+							{data && data.length == 0 && <Tr><Td colSpan={columns.length + 1} bg="orange.200"><Text fontSize="md">No results</Text></Td></Tr>}
+							{data && data.map((row) => {
 								return (
 								<Tr role="group" key={row.id}>
 									<Td _groupHover={hoverRowStyle}><Checkbox value={row.id} onChange={handleSelectedRow}/></Td>
@@ -153,12 +224,12 @@ export default function Dashboard({ data, count, page, pagesTotal}) {
 						</Tbody>
 					</Table>
 				</TableContainer>
-				<HStack w="full" justifyContent="space-between" py={3}>
+				<HStack w="full" justifyContent="space-between" py={3} px={6}>
 					<ButtonGroup>
-						<Button onClick={()=> router.push(`?page=${page-1}`)} isDisabled={page <= 1} variant="secondary">Previous</Button>
-						<Button onClick={()=> router.push(`?page=${page+1}`)} isDisabled={page >= pagesTotal} variant="secondary">Next</Button>
+						<Button onClick={()=> setPageIndex(pageIndex-1)} isDisabled={pageIndex <= 1} variant="secondary">Previous</Button>
+						<Button onClick={()=> setPageIndex(pageIndex+1)} isDisabled={pageIndex >= pagesTotal} variant="secondary">Next</Button>
 					</ButtonGroup>
-					<Text alignItems="flex-start">Page {page} of {pagesTotal}</Text>
+					{data && <Text alignItems="flex-start">Page {pageIndex} of {pagesTotal}</Text>}
 				</HStack>
 
 					
@@ -170,28 +241,9 @@ export default function Dashboard({ data, count, page, pagesTotal}) {
 	);
 }
 
-export async function getServerSideProps({ query: { page = 1} }) {
-
-	const size = 3;
-	const from =  (page - 1) * size;
-	const to = from + size - 1;
-
-	let { data, count, error } = await supabase
-	.from("registrations")
-	.select("*", { count: "exact" })
-	.order("id", { ascending: true })
-	.range(from, to);
-
-	if (error) throw error;
-
-	const pagesTotal = Math.ceil(count / size);
+export async function getServerSideProps() {
 
 	return {
-		props: {
-			data,
-			count,
-			page: +page,
-			pagesTotal
-		},
+		props: {}
 	};
 }

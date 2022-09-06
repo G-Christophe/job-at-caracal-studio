@@ -164,7 +164,7 @@ export default function Dashboard() {
 	}
 
 	const closeIconVariants = {
-		open: {rotate: '45deg'},
+		open: {rotate: '315deg'},
 		close: {rotate: 0}
 	}
 
@@ -198,14 +198,12 @@ export default function Dashboard() {
 						</Thead>
 						<Tbody>
 							<Tr bg="gray.50">
-							<Td colSpan={columns.length + 1} p={0}>
-							<Collapse in={isFiltersOpen} animateOpacity>						
-								<Table><Tbody><Tr>
-								{columns.map((column, i) => (i==0)? <Td colSpan={2} key={column.keyname}>{setFilterUI(column)}</Td> : <Td key={column.keyname}>{setFilterUI(column)}</Td>)}
-								</Tr></Tbody></Table>
-							</Collapse>	
-							</Td>
-							</Tr>
+								{columns.map((column, i) => 
+									<Td colSpan={(i==0)? 2 : 1} key={column.keyname} py={0}>
+										<Collapse in={isFiltersOpen} animateOpacity><Box py={4}>{setFilterUI(column)}</Box></Collapse>
+									</Td> 
+								)}
+							</Tr> 
 							{isLoading && <Tr><Td colSpan={columns.length + 1}><Center><Spinner /></Center></Td></Tr>}
 							{data && data.length == 0 && <Tr><Td colSpan={columns.length + 1} bg="orange.200"><Text fontSize="md">No results</Text></Td></Tr>}
 							{data && data.map((row) => {

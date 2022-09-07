@@ -179,7 +179,7 @@ export default function Dashboard() {
 					</ButtonGroup>
 					<ButtonGroup>
 						<Button variant="ternary" onClick={toggleFilters}>
-							<MotionBox transition="0.5s ease-in-out" animate={isFiltersOpen? "close" : "open"} variants={closeIconVariants}>
+							<MotionBox transition="0.5s ease-in-out" animate={isFiltersOpen? 'close' : 'open'} variants={closeIconVariants}>
 								<Image src="close-icon.svg" alt="Close" width="10px" />
 							</MotionBox>
 							<Text ml={2}>Filters</Text>

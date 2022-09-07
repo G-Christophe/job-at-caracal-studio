@@ -45,9 +45,9 @@ export const registrationColumns = [
     },
 ]
 
-export const ticketTypeOptions = [
+export const statusOptions = [
     {
-        label: 'Ticket',
+        label: 'Status',
         value: ''
     },
     {
@@ -72,9 +72,9 @@ export const ticketTypeOptions = [
     },
 ]
 
-export const statusOptions = [
+export const ticketTypeOptions = [
     {
-        label: 'Status',
+        label: 'Ticket',
         value: ''
     },
     {

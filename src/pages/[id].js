@@ -1,6 +1,6 @@
-import { Heading, Box, Text, HStack, Badge } from '@chakra-ui/react';
+import { Box } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import dayjs from 'dayjs';
 
 import supabase from '_supabase';

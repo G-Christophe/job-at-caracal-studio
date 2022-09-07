@@ -25,7 +25,7 @@ const RegistrationForm = forwardRef(({ registration = {}, countries = [], onSubm
 
 
     return(  
-        <form onSubmit={handleSubmit(onSubmit)} ref={ref} >
+        <form onSubmit={handleSubmit(onSubmit)} ref={ref} noValidate>
             <Container gap={4}>
                 <Col colStart={1} colEnd={19}>
                     <Box mb={8} mt={5}>

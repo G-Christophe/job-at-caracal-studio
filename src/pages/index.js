@@ -14,12 +14,12 @@ import dayjs from 'dayjs';
 
 export default function Dashboard() {
 	const router = useRouter();
-	const [ selectedRows, setSelectedRows ] = useState([]);
 	const [ filters, setFilters ] = useState({});
 	const [ pageIndex, setPageIndex ] = useState(1);
 	const [ pagesTotal, setPageTotal ] = useState(0);
 	const [ isLoading, setLoading ] = useState(true);
 	const [ data, setData ] = useState();
+	const [ selectedCount, setSelectedCount ] = useState(0);
 	const [ isFiltersOpen, setFiltersOpen ] = useState(true);
 	const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -53,42 +53,63 @@ export default function Dashboard() {
 		}
 	};
 
-	useEffect(()=> { getRegistrations() }, [pageIndex, filters]);
+	useEffect(()=>{ getRegistrations() }, [pageIndex, filters]);
 
+	// Count selected rows
 
-	// Batch delete
-
-	// TODO: Set the select state on data 
-	const handleSelectedRow = (e) => {
-		const { value, checked } = e.target;
-		if (checked) {
-			setSelectedRows([...selectedRows, value]);
-		} else { 
-			setSelectedRows(selectedRows.filter((item) => item != value));
+	const updateSelectedCount = () => {
+		if(data) {
+			const selectedRows = data.filter(data => data.selected === true);
+			setSelectedCount(selectedRows.length);
 		}
 	}
 
-	const handleSelectedAllRows = (e) => {
+	useEffect(()=>{ updateSelectedCount() }, [data]);
 
+	// Batch delete
+
+	const handleSelectedRow = (e) => {
+		const { value, checked } = e.target;
+		const updateData = data.map((item) => {
+			if(value == item.id){
+				return {...item, selected: checked}
+			}
+			return item;
+		});
+		setData(updateData);
+	}
+
+	const handleSelectedAllRows = (e) => {
+		const updateData = data.map((item) => {
+			return {...item, selected: e.target.checked}
+		});
+		setData(updateData);
 	}
 
 	const handleDeleteRows = async (e) => { 
+		// Open confirm dialog
 		onOpen();
 	}
 
-	// TODO: On delete confirmation delete the selected items from data instead of a hard reload
 	const onConfirmDelete = async (e) => {
 		onClose();
 		await deleteRows();
-		router.reload();
 	}
 
 	const deleteRows = async (e) => { 
+		const idsSelected = [];
+		data.forEach((item) => item.selected && idsSelected.push(item.id) );
+		if (idsSelected.length === 0) return;
 		try {
 			const { error } = await supabase
 			.from('registrations')
 			.delete()
-			.in('id', selectedRows);
+			.in('id', idsSelected);
+
+			if(!error) {
+				const notSelectedRows = data.filter(data => data.selected !== true);
+				setData(notSelectedRows);
+			}
 		} catch (error) {
 			console.log(error.message)
 		}
@@ -175,7 +196,7 @@ export default function Dashboard() {
 				<HStack w="full" justifyContent="space-between" py={3} px={6}>
 					<ButtonGroup>
 						<Button onClick={()=>{router.push('/new')}}>Add registration</Button>
-						{ selectedRows.length > 0 && <Button onClick={handleDeleteRows}>Delete</Button> }
+						{ selectedCount > 0 && <Button onClick={handleDeleteRows}>Delete</Button> }
 					</ButtonGroup>
 					<ButtonGroup>
 						<Button variant="ternary" onClick={toggleFilters}>
@@ -205,11 +226,11 @@ export default function Dashboard() {
 								)}
 							</Tr> 
 							{isLoading && <Tr><Td colSpan={columns.length + 1}><Center><Spinner /></Center></Td></Tr>}
-							{data && data.length == 0 && <Tr><Td colSpan={columns.length + 1} bg="orange.200"><Text fontSize="md">No results</Text></Td></Tr>}
+							{data && data.length === 0 && <Tr><Td colSpan={columns.length + 1} bg="orange.200"><Text fontSize="md">No results</Text></Td></Tr>}
 							{data && data.map((row) => {
 								return (
 								<Tr role="group" key={row.id}>
-									<Td _groupHover={hoverRowStyle}><Checkbox value={row.id} onChange={handleSelectedRow}/></Td>
+									<Td _groupHover={hoverRowStyle}><Checkbox value={row.id} onChange={handleSelectedRow} isChecked={row.selected}/></Td>
 									{columns.map((column) => 
 										{
 											const content = formatCell(column, row[column.keyname]);
